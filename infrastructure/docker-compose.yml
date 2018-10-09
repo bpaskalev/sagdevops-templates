@@ -70,3 +70,8 @@ services:
         - LICENSES_URL                            # licenses .zip, e.g. 10.x
     depends_on: 
       - node
+  kube-registrar:
+    image: kube-registrar:${TAG}
+    build:
+      context: commandcentral-kube-registrar/
+      dockerfile: Dockerfile
