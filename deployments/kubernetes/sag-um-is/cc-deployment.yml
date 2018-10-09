@@ -13,10 +13,39 @@
 #     distributed under the License is distributed on an "AS IS" BASIS,
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
-#     limitations under the License.
+#     limitations under the License.                                                            
 #
 ###############################################################################
-apiVersion: v1
-kind: Namespace
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-   name: um-is-namespace
+  name: cc-deployment
+  namespace: um-is-namespace
+  labels:
+    mylabel: test123
+  annotations:
+    ann1: "15"
+    ann2: "26"
+spec:
+  selector:
+    matchLabels:
+      app: cc
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cc
+        type: appli
+    spec:
+#      serviceAccountName: um-is-namespace-cc
+      containers:
+      - name: cc
+        image: daerepository03.eur.ad.sag:4443/ccdevops/commandcentral-server:10.3
+        ports:
+        - containerPort: 8091
+        envFrom:
+        - configMapRef:
+            name: cc-env-variables
+      imagePullSecrets:
+      - name: cc-registrypullsecret
+          

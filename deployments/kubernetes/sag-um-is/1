@@ -1,0 +1,38 @@
+#!/bin/bash
+echo processing:
+
+HOSTNAME=$(echo $4 | cut -d '.' -f 1)
+APPNAME=$(echo $6 | tr "\}" "\{" | cut -d '{' -f 2)
+ACTION=$8
+FIRST_SEEN=$2
+
+[[ "$FIRST_SEEN" != "*s" ]] && [[ "$APPNAME" == "registrar" ]] && exit
+
+echo $HOSTNAME
+echo $APPNAME
+echo $ACTION
+
+exit 0
+
+DESCRIPTION="Automatically added"
+ALIAS=$APPNAME
+CONTAINER_IP=$(kubectl describe pod $HOSTNAME -n $NAMESPACE  | grep ^IP | tr -s " " | cut -f2 -d ' '
+
+case $ACTION in
+	Starting)
+                echo "adding "$CONTAINER_IP with alias $ALIAS"
+	        $CC_CLI_HOME/bin/sagcc list landscape nodes --wait-for-cc 
+        	$CC_CLI_HOME/bin/sagcc add landscape nodes alias=$ALIAS url="https://$CONTAINER_IP:8093" description=$DESCRIPTION -e OK -w 180 -c 20 
+        	$CC_CLI_HOME/bin/sagcc list landscape nodes 	
+
+		;;
+	Killing)
+                echo "removing "$CONTAINER_IP with alias $ALIAS"
+	        $CC_CLI_HOME/bin/sagcc list landscape nodes --wait-for-cc 
+       		$CC_CLI_HOME/bin/sagcc delete landscape nodes $ALIAS 
+       		$CC_CLI_HOME/bin/sagcc list landscape nodes 
+		;;
+	*)
+		echo "Unknown action $ACTION"
+esac
+

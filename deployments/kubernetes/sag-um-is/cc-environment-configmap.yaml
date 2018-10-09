@@ -17,6 +17,12 @@
 #
 ###############################################################################
 apiVersion: v1
-kind: Namespace
+data:
+  CC_SERVER: localhost
+  CC_PASSWORD: manage
+kind: ConfigMap
 metadata:
-   name: um-is-namespace
+  creationTimestamp: null
+  name: cc-env-variables
+  namespace: um-is-namespace
+

@@ -13,10 +13,25 @@
 #     distributed under the License is distributed on an "AS IS" BASIS,
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
-#     limitations under the License.
+#     limitations under the License.                                                            
 #
 ###############################################################################
-apiVersion: v1
-kind: Namespace
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-   name: um-is-namespace
+  name: registrar
+  namespace: um-is-namespace
+spec:
+  selector:
+    matchLabels:
+      app: registrar
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: registrar
+    spec:
+      serviceAccountName: um-is-namespace-registrar
+      containers:
+      - name: registrar
+        image: kube:0.1
