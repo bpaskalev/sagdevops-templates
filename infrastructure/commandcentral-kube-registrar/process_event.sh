@@ -38,7 +38,6 @@ echo $NAMESPACE
 DESCRIPTION="Automatically_added"
 #ALIAS=$APPNAME
 ALIAS=$SPM_HOSTNAME
-CONTAINER_IP=$(kubectl describe pod $SPM_HOSTNAME -n $NAMESPACE  | grep ^IP | tr -s " " | cut -f2 -d ' ')
 
 case $ACTION in
 	Started)
@@ -54,26 +53,28 @@ case $ACTION in
 		$CC_CLI_HOME/bin/sagcc add landscape nodes alias=$ALIAS url="http://$CONTAINER_IP:8092" description=$DESCRIPTION -e OK -w 180 -c 20
 		$CC_CLI_HOME/bin/sagcc list landscape nodes
                 echo addint $ALIAS to stacks
-                ALIAS=<pod_name>, e.g. is01-deployment.123123
+#                ALIAS=<pod_name>, e.g. is01-deployment.123123
 
-		RELEASE=10.3 // hard code, or it might come from the pod label
-		STACK=<from pod com.softwareag.stack label = stack>, e.g. solution1
-		LAYER=<from pod com.softwareag.layer label = layer>, e.g. is or um
+		RELEASE=$(kubectl get pod -n  $NAMESPACE $SPM_HOSTNAME -o jsonpath='{.metadata.labels.release}') #10.3 // hard code, or it might come from the pod label
+		STACK=$(kubectl get pod -n  $NAMESPACE $SPM_HOSTNAME -o jsonpath='{.metadata.labels.com\.softwareag\.stack}') #<from pod com.softwareag.stack label = stack>, e.g. solution1
+		LAYER=$(kubectl get pod -n  $NAMESPACE $SPM_HOSTNAME -o jsonpath='{.metadata.labels.com\.softwareag\.layer}') # <from pod com.softwareag.layer label = layer>, e.g. is or um
 
-		STAGE=<from pod com.softwareag.stage label = stage>, e.g. dev
-		TENANT=<from pod  com.softwareag.tenant label>, e.g. customer1
+		STAGE=$(kubectl get pod -n  $NAMESPACE $SPM_HOSTNAME -o jsonpath='{.metadata.labels.com\.softwareag\.stage}') #<from pod com.softwareag.stage label = stage>, e.g. dev
+		TENANT=$(kubectl get pod -n  $NAMESPACE $SPM_HOSTNAME -o jsonpath='{.metadata.labels.com\.softwareag\.tenant}') #<from pod  com.softwareag.tenant label>, e.g. customer1
 
 		# processing
 
-		if ! sagcc get stacks $STACK then; # no stack yet
+		if ! sagcc get stacks $STACK # no stack yet
+		then
 		  # create new stack
 		  sagcc create stacks alias=$STACK release=$RELEASE description="$TENANT $STACK in $STAGE"
 		fi
 
 		# core product component id
-		COMPONENT=`sagcc list inventory components nodeAlias=$ALIAS runtimeComponentCategory=PROCESS properties=runtimeComponent.id includeHeaders=false | grep -v SPM`
+		COMPONENT=$(sagcc list inventory components nodeAlias=$ALIAS runtimeComponentCategory=PROCESS properties=runtimeComponent.id includeHeaders=false | grep -v SPM)
 
-		if ! sagcc get stacks $STACK layers $LAYER nodes then; # no layer yet
+		if ! sagcc get stacks $STACK layers $LAYER nodes  # no layer yet
+		then
 		   # register layer
 		   sagcc create stacks $STACK layers alias=$LAYER layerType=RUNTIME-EXISTING nodes=$ALIAS runtimeComponentId=$COMPONENT description="Layer of Kubernetes pods"
 		else
@@ -85,7 +86,8 @@ case $ACTION in
 		sagcc create inventory components attributes $ALIAS $COMPONENT "com.softwareag.stage=$STAGE" "com.softwareag.tenant=$TENANT"
 
 		# add infrastructure layer
-		if ! sagcc get stacks $STACK layers $LAYER nodes then;
+		if ! sagcc get stacks $STACK layers $LAYER nodes 
+		then
 		   sagcc create stacks $STACK layers alias=$LAYER layerType=INFRA-EXISTING nodes=$ALIAS
 		fi
 
@@ -100,6 +102,7 @@ case $ACTION in
 		sagcc list stacks $STACK nodes
 		;;
 	Killing)
+		CONTAINER_IP=$(kubectl describe pod $SPM_HOSTNAME -n $NAMESPACE  | grep ^IP | tr -s " " | cut -f2 -d ' ')
 		echo "removing $CONTAINER_IP with alias $ALIAS"
 		$CC_CLI_HOME/bin/sagcc list landscape nodes --wait-for-cc
 		$CC_CLI_HOME/bin/sagcc delete landscape nodes $ALIAS --force

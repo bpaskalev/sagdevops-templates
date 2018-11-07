@@ -23,9 +23,6 @@ metadata:
   namespace: um-is-namespace
   labels:
     mylabel: test123
-  annotations:
-    ann1: "15"
-    ann2: "26"
 spec:
   selector:
     matchLabels:
@@ -37,7 +34,6 @@ spec:
         app: cc
         type: appli
     spec:
-#      serviceAccountName: um-is-namespace-cc
       containers:
       - name: cc
         image: daerepository03.eur.ad.sag:4443/ccdevops/commandcentral-server:10.3
@@ -46,6 +42,6 @@ spec:
         envFrom:
         - configMapRef:
             name: cc-env-variables
-      imagePullSecrets:
-      - name: cc-registrypullsecret
+      #imagePullSecrets:
+      #- name: cc-registrypullsecret
           
