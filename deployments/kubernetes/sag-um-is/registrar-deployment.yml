@@ -34,4 +34,5 @@ spec:
       serviceAccountName: um-is-namespace-registrar
       containers:
       - name: registrar
-        image: commandcentral-kube-registrar:10.3
+        image:  daerepository03.eur.ad.sag:4443/ccdevops/commandcentral-kube-registrar:10.3
+        imagePullPolicy: Always

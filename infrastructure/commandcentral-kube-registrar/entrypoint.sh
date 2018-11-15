@@ -22,7 +22,8 @@ export CA_CERT=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 export TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
 export NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
 ## todo wait for cc to become available
-export CC_SERVER=$(kubectl describe pod -n $NAMESPACE $(kubectl get pod -n $NAMESPACE | grep cc-deployment | cut -f1 -d " ") | grep ^IP | tr -s " " | cut -f2 -d " ")
+#export CC_SERVER=$(kubectl describe pod -n $NAMESPACE $(kubectl get pod -n $NAMESPACE | grep cc-deployment | cut -f1 -d " ") | grep ^IP | tr -s " " | cut -f2 -d " ")
+export CC_SERVER=https://$CC_SERVICE_HOST:$CC_SERVICE_PORT
 env
 while true
 do 

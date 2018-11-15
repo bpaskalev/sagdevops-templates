@@ -30,10 +30,15 @@ spec:
     metadata:
       labels:
         app: um
+        release: "10.3"
+        "com.softwareag.stack": solution1
+        "com.softwareag.layer": um
+        "com.softwareag.stage": dev
+        "com.softwareag.tenant": customer1
     spec:
       containers:
       - name: um01
-        image:  daerepository03.eur.ad.sag:4443/ccdevops/universal-messaging:10.3
+        image:  daerepository03.eur.ad.sag:4443/sagdevops/universal-messaging:10.3
         ports:
         - containerPort: 9000
         - containerPort: 8092

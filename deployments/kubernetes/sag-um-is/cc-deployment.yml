@@ -39,6 +39,9 @@ spec:
         image: daerepository03.eur.ad.sag:4443/ccdevops/commandcentral-server:10.3
         ports:
         - containerPort: 8091
+          hostPort: 8091
+        #- containerPort: 8090
+      
         envFrom:
         - configMapRef:
             name: cc-env-variables

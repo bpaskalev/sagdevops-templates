@@ -52,7 +52,9 @@ case $ACTION in
 		$CC_CLI_HOME/bin/sagcc list landscape nodes --wait-for-cc
 		$CC_CLI_HOME/bin/sagcc add landscape nodes alias=$ALIAS url="http://$CONTAINER_IP:8092" description=$DESCRIPTION -e OK -w 180 -c 20
 		$CC_CLI_HOME/bin/sagcc list landscape nodes
-                echo addint $ALIAS to stacks
+		echo waiting for node $ALIAS to become online
+                sagcc list landscape nodes $ALIAS -e ONLINE -w 300 -c 20
+                echo adding $ALIAS to stacks
 #                ALIAS=<pod_name>, e.g. is01-deployment.123123
 
 		RELEASE=$(kubectl get pod -n  $NAMESPACE $SPM_HOSTNAME -o jsonpath='{.metadata.labels.release}') #10.3 // hard code, or it might come from the pod label
@@ -68,31 +70,35 @@ case $ACTION in
 		then
 		  # create new stack
 		  sagcc create stacks alias=$STACK release=$RELEASE description="$TENANT $STACK in $STAGE"
+		  sleep 10
 		fi
 
 		# core product component id
-		COMPONENT=$(sagcc list inventory components nodeAlias=$ALIAS runtimeComponentCategory=PROCESS properties=runtimeComponent.id includeHeaders=false | grep -v SPM)
-
+		COMPONENT=$(sagcc list inventory components nodeAlias=$ALIAS runtimeComponentCategory=PROCESS properties=runtimeComponent.id includeHeaders=false | grep -v SPM | tr -d "\r\n")
+                #create infrastructure layer if does not exist
+                if ! sagcc get stacks $STACK layers INFRA
+                then
+		   sagcc create stacks  $STACK layers alias=INFRA layerType=INFRA-EXISTING nodes=$ALIAS runtimeComponentId=OSGI-SPM description="Infrastructure layer"
+                   sleep 10
+                fi
 		if ! sagcc get stacks $STACK layers $LAYER nodes  # no layer yet
 		then
 		   # register layer
 		   sagcc create stacks $STACK layers alias=$LAYER layerType=RUNTIME-EXISTING nodes=$ALIAS runtimeComponentId=$COMPONENT description="Layer of Kubernetes pods"
+		  sleep 10
 		else
 		   # scale layer to more instances
 		   sagcc create inventory components attributes $ALIAS $COMPONENT "com.softwareag.belongs_to=$STACK:$LAYER"
+                   sleep 10
 		fi
 
 		# add some other general attributes
 		sagcc create inventory components attributes $ALIAS $COMPONENT "com.softwareag.stage=$STAGE" "com.softwareag.tenant=$TENANT"
 
-		# add infrastructure layer
-		if ! sagcc get stacks $STACK layers $LAYER nodes 
-		then
-		   sagcc create stacks $STACK layers alias=$LAYER layerType=INFRA-EXISTING nodes=$ALIAS
-		fi
 
 		# some generic attributes for nodes
 		sagcc create inventory components attributes $ALIAS OSGI-SPM  "com.softwareag.belongs_to=$STACK:Infrastructure" "com.softwareag.stage=$STAGE" "com.softwareag.tenant=$TENANT"
+                sleep 10
 
 
 		# list current inventory
@@ -102,7 +108,14 @@ case $ACTION in
 		sagcc list stacks $STACK nodes
 		;;
 	Killing)
+                
 		CONTAINER_IP=$(kubectl describe pod $SPM_HOSTNAME -n $NAMESPACE  | grep ^IP | tr -s " " | cut -f2 -d ' ')
+                STACK=$(kubectl get pod -n  $NAMESPACE $SPM_HOSTNAME -o jsonpath='{.metadata.labels.com\.softwareag\.stack}') #<from pod com.softwareag.stack label = stack>, e.g. solution1
+                LAYER=$(kubectl get pod -n  $NAMESPACE $SPM_HOSTNAME -o jsonpath='{.metadata.labels.com\.softwareag\.layer}') # <fr
+		#remove Ccomponent layer
+		sagcc delete stacks $STACK layers $LAYER --force
+		sleep 10
+
 		echo "removing $CONTAINER_IP with alias $ALIAS"
 		$CC_CLI_HOME/bin/sagcc list landscape nodes --wait-for-cc
 		$CC_CLI_HOME/bin/sagcc delete landscape nodes $ALIAS --force
