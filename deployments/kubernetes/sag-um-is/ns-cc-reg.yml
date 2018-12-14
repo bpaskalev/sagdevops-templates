@@ -1,0 +1,123 @@
+###############################################################################
+#  Copyright 2013 - 2018 Software AG, Darmstadt, Germany and/or its licensors
+#
+#   SPDX-License-Identifier: Apache-2.0
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+#
+###############################################################################
+apiVersion: v1
+kind: Namespace
+metadata:
+   name: um-is-namespace
+---
+# cc-service.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: cc
+  namespace: um-is-namespace
+spec:
+  selector:
+    app: "cc"
+  ports:
+  - protocol: TCP
+    port: 8091
+
+---
+# cc-environment-configmap.yaml
+apiVersion: v1
+data:
+  CC_SERVER: localhost
+  CC_PASSWORD: manage
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: cc-env-variables
+  namespace: um-is-namespace
+
+---
+# cc-deployment.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cc-deployment
+  namespace: um-is-namespace
+  labels:
+    mylabel: test123
+spec:
+  selector:
+    matchLabels:
+      app: cc
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cc
+        type: appli
+    spec:
+      containers:
+      - name: cc
+        image: daerepository03.eur.ad.sag:4443/ccdevops/commandcentral-server:10.3
+        ports:
+        - containerPort: 8091
+          hostPort: 8091
+        #- containerPort: 8090
+
+        envFrom:
+        - configMapRef:
+            name: cc-env-variables
+
+---
+# registrar-serviceaccount.yml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: um-is-namespace-registrar
+  namespace: um-is-namespace
+---
+# registrar-clusterrolebinding.yml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: registrar-list-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: um-is-namespace-registrar
+  namespace: um-is-namespace
+---
+# kube-registrar-deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registrar
+  namespace: um-is-namespace
+spec:
+  selector:
+    matchLabels:
+      app: registrar
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: registrar
+    spec:
+      serviceAccountName: um-is-namespace-registrar
+      containers:
+      - name: registrar
+        image:  daerepository03.eur.ad.sag:4443/ccdevops/commandcentral-kube-registrar:10.3
+        imagePullPolicy: Always

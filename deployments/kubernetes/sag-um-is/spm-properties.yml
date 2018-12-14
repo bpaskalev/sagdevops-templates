@@ -18,6 +18,17 @@
 ###############################################################################
 apiVersion: v1
 data:
+  com.softwareag.registry.handler.pid-CC.properties: |-
+    registry.target=(name=CC)
+    executor.name=cron
+    executor.period=1000
+kind: ConfigMap
+metadata:
+  name: spm-prop-1
+  namespace: um-is-namespace
+---
+apiVersion: v1
+data:
   com.softwareag.registry.pid-CC.properties: |-
     registry.root=.
     registry.namespaces.root=.
@@ -29,3 +40,34 @@ kind: ConfigMap
 metadata:
   name: spm-prop-2
   namespace: um-is-namespace
+---
+apiVersion: v1
+data:
+  com.softwareag.repository.git.pid-CC.properties: |-
+    remoteStore=@env:LAR_REPO_URL
+    #branch=$env:LAR_REPO_BRANCH
+    name=CC
+    type=git
+    localStore=file\\:/opt/softwareag/profiles/SPM/data/git/lar
+kind: ConfigMap
+metadata:
+  name: spm-prop-3
+  namespace: um-is-namespace
+apiVersion: v1
+data:
+  com.softwareag.registry.handler.pid-CC.properties: |
+    registry.target: "(name=CC)"
+    executor.name: "cron"
+    executor.period: "1000"
+  com.softwareag.registry.pid-CC.properties: |
+    registry.root: "."
+    registry.namespaces.root: "."
+    name: "CC"
+    repository.target: "(name\=CC)"
+    registry.factory.target: "(component.name\=com.webmethods.deployer.common.acdl.AcdlCompositeAsset)"
+    type: "com.webmethods.deployer.common.acdl.AcdlCompositeAsset"
+    binary.repository.target: "(name\=CC)"
+  com.softwareag.repository.git.pid-CC.properties: |
+    name: "CC"
+    type: "git"
+    localStore: "file\:/opt/softwareag/profiles/SPM/data/git/lar"
